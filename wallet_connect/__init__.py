@@ -1,7 +1,7 @@
-import streamlit.components.v1 as components
-import streamlit as st
 import os
 
+import streamlit as st
+import streamlit.components.v1 as components
 
 parent_dir = os.path.dirname(os.path.abspath(__file__))
 build_dir = os.path.join(parent_dir, "frontend/build")
@@ -31,16 +31,16 @@ def wallet_connect(label, key=None, message="Connect Wallet", contract_address="
         )
 
 
-wallet_button = wallet_connect(label="wallet", key="wallet")
-st.write(f"Wallet {wallet_button} connected.")
+# wallet_button = wallet_connect(label="wallet", key="wallet")
+# st.write(f"Wallet {wallet_button} connected.")
 
-button = wallet_connect(message="Create Token", label="create_token", key="create_token", price="0.01", supply=1000, uri="https://gateway.pinata.cloud/ipfs/QmZrFfBGmUmXYUVeTrKdKC1aFeBBEEXQPGhsJtX45GwCC5", chain_name="goerli")
-st.write(f"TokenId is {button}")
+# button = wallet_connect(message="Create Token", label="create_token", key="create_token", price="0.01", supply=1000, uri="https://gateway.pinata.cloud/ipfs/QmZrFfBGmUmXYUVeTrKdKC1aFeBBEEXQPGhsJtX45GwCC5", chain_name="goerli")
+# st.write(f"TokenId is {button}")
 
-mint_button = wallet_connect(message="Login Algovera", label="mint_and_login_algovera", key="mint_and_login_algovera", price="0.01", token_id="1", chain_name="goerli")
+# mint_button = wallet_connect(message="Login Algovera", label="mint_and_login_algovera", key="mint_and_login_algovera", price="0.01", token_id="1", chain_name="goerli")
 
-if mint_button == True:
-    st.write("Logged in!")
-    st.image("dog.jpeg")
-else:
-    st.write("Not authorized to access this application.")
+# if mint_button == True:
+#     st.write("Logged in!")
+#     st.image("dog.jpeg")
+# else:
+#     st.write("Not authorized to access this application.")

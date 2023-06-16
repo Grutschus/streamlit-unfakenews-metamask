@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(
-    name="streamlit-wallet-connect",
+    name="streamlit-unfakenews-metamask",
     version="0.1.0",
     author="AlgoveraAI",
     author_email="hello@algovera.ai",

@@ -1,13 +1,13 @@
+
+import * as ethers from "ethers";
+import React, { ReactNode } from "react";
 import {
   Streamlit,
   StreamlitComponentBase,
   withStreamlitConnection,
-} from "streamlit-component-lib"
-import React, { ReactNode } from "react"
-import * as ethers from "ethers"
-import { encrypt, decrypt, login, mintAndLogin, initToken, mintAndLoginAlgovera } from "./litComponent"
-import { readFileSync, writeFileSync, promises as fsPromises } from 'fs';
-import { join } from 'path';
+} from "streamlit-component-lib";
+import NewsNFT from "./contracts/NewsNFT.json";
+import { decrypt, encrypt, initToken, login, mintAndLogin, mintAndLoginAlgovera } from "./litComponent";
 
 interface State {
   walletAddress: string
@@ -51,7 +51,7 @@ async function getAccount() {
   await provider.send("eth_requestAccounts", [])
   window.ethereum.on('accountsChanged', function (accounts: any) {
     // Time to reload your interface with accounts[0]!
-  });  
+  });
   signer = provider.getSigner()
   signer = "0"
   signer = provider.getSigner()
@@ -59,9 +59,25 @@ async function getAccount() {
   return address
 }
 
+
+async function mintNewsNFT(uri: string) {
+  const contractAddress = NewsNFT.networks[5778].address
+  const contractAbi = NewsNFT.abi
+
+  const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
+
+  await provider.send("eth_requestAccounts", []);
+  const signer = provider.getSigner();
+
+  let contract = new ethers.Contract(contractAddress, contractAbi, signer);
+  const transaction = await contract.createNewsItem(uri)
+  return transaction
+}
+
+
 async function sendToken(to_address: string,
-                        send_token_amount: string,
-                        contract_address: string = "0x8967BCF84170c91B0d24D4302C2376283b0B3a07") {
+  send_token_amount: string,
+  contract_address: string = "0x8967BCF84170c91B0d24D4302C2376283b0B3a07") {
   console.log("Sending OCEAN initiated");
 
   const contractAddress = contract_address;
@@ -110,22 +126,6 @@ async function sendToken(to_address: string,
   console.log(to_address);
 }
 
-// function syncWriteFile(filename: string, data: any) {
-//   /**
-//    * flags:
-//    *  - w = Open file for reading and writing. File is created if not exists
-//    *  - a+ = Open file for reading and appending. The file is created if not exists
-//    */
-//   writeFileSync(join(__dirname, filename), data, {
-//     flag: 'w',
-//   });
-
-//   const contents = readFileSync(join(__dirname, filename), 'utf-8');
-//   console.log(contents); // 👉️ "One Two Three Four"
-
-//   return contents;
-// }
-
 
 
 /**
@@ -133,13 +133,13 @@ async function sendToken(to_address: string,
  * automatically when your component should be re-rendered.
  */
 class WalletConnect extends StreamlitComponentBase<State> {
-  public state = { 
-    walletAddress: "not", 
-    transaction: "", 
-    isFocused: false, 
-    encryptedString: "", 
-    encryptedSymmetricKey: "", 
-    decryptedString: "", 
+  public state = {
+    walletAddress: "not",
+    transaction: "",
+    isFocused: false,
+    encryptedString: "",
+    encryptedSymmetricKey: "",
+    decryptedString: "",
     loggedIn: false,
     tokenId: ""
   };
@@ -159,10 +159,9 @@ class WalletConnect extends StreamlitComponentBase<State> {
     if (theme) {
       // Use the theme object to style our button border. Alternatively, the
       // theme style is defined in CSS vars.
-      const borderStyling = `0px solid ${
-        this.state.isFocused ? theme.primaryColor : "gray"
-      }`
-      const backgroundColorStyling = `${this.state.isFocused ? "#4F8BF9" :  "#FF4B4B"}` // 
+      const borderStyling = `0px solid ${this.state.isFocused ? theme.primaryColor : "gray"
+        }`
+      const backgroundColorStyling = `${this.state.isFocused ? "#4F8BF9" : "#FF4B4B"}` // 
       style.border = borderStyling
       style.outline = borderStyling
       style.backgroundColor = backgroundColorStyling // "#FF4B4B"
@@ -203,65 +202,66 @@ class WalletConnect extends StreamlitComponentBase<State> {
         () => Streamlit.setComponentValue(this.state.walletAddress)
       )
     } else if (this.props.args["key"] === "send") {
-        const tx: any = await sendToken(this.props.args["to_address"], this.props.args["amount"], this.props.args["contract_address"])
-        // const tx: any = await send_token(this.props.args["contract_address"], this.props.args["amount"], this.props.args["to_address"])
-        // const tx = await sendFixedPayment(String(this.props.args["amount"]), this.props.args["to"])
-        this.setState(
-          () => ({ transaction: tx }),
-          () => Streamlit.setComponentValue(this.state.transaction)
-        )
+      const tx: any = await sendToken(this.props.args["to_address"], this.props.args["amount"], this.props.args["contract_address"])
+      // const tx: any = await send_token(this.props.args["contract_address"], this.props.args["amount"], this.props.args["to_address"])
+      // const tx = await sendFixedPayment(String(this.props.args["amount"]), this.props.args["to"])
+      this.setState(
+        () => ({ transaction: tx }),
+        () => Streamlit.setComponentValue(this.state.transaction)
+      )
     } else if (this.props.args["key"] === "encrypt") {
-        const { encryptedRealString, encryptedSymmetricKey } = await encrypt(this.props.args["message_to_encrypt"], this.props.args["chain_name"])
-        // syncWriteFile('./example.txt', encryptedRealString);
-        // const sth = await getAuthSig()
-        // console.log("Connected Web3", sth)
-        // console.log("encryptedString", encryptedRealString)
-        // console.log("encryptedSymmetricKey", encryptedSymmetricKey)
-        // const decryptedString = await decrypt(encryptedRealString, encryptedSymmetricKey)
-        // console.log("decryptedString", decryptedString)
-        this.setState(
-          () => ({ encryptedString: encryptedRealString, encryptedSymmetricKey: encryptedSymmetricKey }),
-          () => Streamlit.setComponentValue({ encryptedRealString, encryptedSymmetricKey })
-        )
+      const { encryptedRealString, encryptedSymmetricKey } = await encrypt(this.props.args["message_to_encrypt"], this.props.args["chain_name"])
+      // syncWriteFile('./example.txt', encryptedRealString);
+      // const sth = await getAuthSig()
+      // console.log("Connected Web3", sth)
+      // console.log("encryptedString", encryptedRealString)
+      // console.log("encryptedSymmetricKey", encryptedSymmetricKey)
+      // const decryptedString = await decrypt(encryptedRealString, encryptedSymmetricKey)
+      // console.log("decryptedString", decryptedString)
+      this.setState(
+        () => ({ encryptedString: encryptedRealString, encryptedSymmetricKey: encryptedSymmetricKey }),
+        () => Streamlit.setComponentValue({ encryptedRealString, encryptedSymmetricKey })
+      )
     } else if (this.props.args["key"] === "decrypt") {
-        const { decryptedString } = await decrypt(this.props.args["encrypted_string"], this.props.args["encrypted_symmetric_key"], this.props.args["chain_name"])
-        this.setState(
-          () => ({ decryptedString: decryptedString }),
-          () => Streamlit.setComponentValue(decryptedString)
-        )
-        console.log("State of encrypted string3:", this.state.encryptedString)
+      const { decryptedString } = await decrypt(this.props.args["encrypted_string"], this.props.args["encrypted_symmetric_key"], this.props.args["chain_name"])
+      this.setState(
+        () => ({ decryptedString: decryptedString }),
+        () => Streamlit.setComponentValue(decryptedString)
+      )
+      console.log("State of encrypted string3:", this.state.encryptedString)
     } else if (this.props.args["key"] === "login") {
-        const lgn = await login(this.props.args["auth_token_contract_address"], this.props.args["chain_name"], this.props.args["contract_type"], this.props.args["num_tokens"])
-        this.setState(
-          () => ({ loggedIn: lgn }),
-          () => Streamlit.setComponentValue(lgn)
-        )
+      const lgn = await login(this.props.args["auth_token_contract_address"], this.props.args["chain_name"], this.props.args["contract_type"], this.props.args["num_tokens"])
+      this.setState(
+        () => ({ loggedIn: lgn }),
+        () => Streamlit.setComponentValue(lgn)
+      )
     } else if (this.props.args["key"] === "mint_and_login") {
       const lgn = await mintAndLogin(this.props.args["chain_name"], this.props.args["contract_type"])
       this.setState(
         () => ({ loggedIn: lgn }),
         () => Streamlit.setComponentValue(lgn)
       )
-  } else if (this.props.args["key"] === "create_token") {
-    const tknId = await initToken(this.props.args["price"], this.props.args["supply"], this.props.args["uri"], this.props.args["chain_name"])
-    console.log("Token ID: ", tknId)
-    this.setState(
-      () => ({ tokenId: tknId }),
-      () => Streamlit.setComponentValue(tknId)
-    )
-  } else if (this.props.args["key"] === "mint_and_login_algovera") {
-    console.log("Token ID is: ",  this.props.args["token_id"])
-    // const x = await testMintAlgovera(this.props.args["chain_name"], this.props.args["token_id"], this.props.args["price"])
-    // UNCOMMENT CODE BELOW, ONLY FOR TESTING
-    const lgn = await mintAndLoginAlgovera(this.props.args["chain_name"], this.props.args["token_id"], this.props.args["price"])
-    console.log("Logged in: ", lgn)
-    this.setState(
-      () => ({ loggedIn: lgn }),
-      () => Streamlit.setComponentValue(lgn)
-    )
-  }
-    // Increment state.numClicks, and pass the new value back to
-    // Streamlit via `Streamlit.setComponentValue`.
+    } else if (this.props.args["key"] === "create_token") {
+      const tknId = await initToken(this.props.args["price"], this.props.args["supply"], this.props.args["uri"], this.props.args["chain_name"])
+      console.log("Token ID: ", tknId)
+      this.setState(
+        () => ({ tokenId: tknId }),
+        () => Streamlit.setComponentValue(tknId)
+      )
+    } else if (this.props.args["key"] === "mint_and_login_algovera") {
+      console.log("Token ID is: ", this.props.args["token_id"])
+      // const x = await testMintAlgovera(this.props.args["chain_name"], this.props.args["token_id"], this.props.args["price"])
+      // UNCOMMENT CODE BELOW, ONLY FOR TESTING
+      const lgn = await mintAndLoginAlgovera(this.props.args["chain_name"], this.props.args["token_id"], this.props.args["price"])
+      console.log("Logged in: ", lgn)
+      this.setState(
+        () => ({ loggedIn: lgn }),
+        () => Streamlit.setComponentValue(lgn)
+      )
+    } else if (this.props.args["key"] === "mint_news_nft") {
+      console.log("Minting NewsNFT with URI: ", this.props.args["uri"])
+      const tx: any = await mintNewsNFT(this.props.args["uri"])
+    }
   }
 
   /** Focus handler for our "Click Me!" button. */
