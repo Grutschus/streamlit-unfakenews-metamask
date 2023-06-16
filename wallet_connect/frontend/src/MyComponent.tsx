@@ -62,6 +62,7 @@ async function getAccount() {
 
 async function mintNewsNFT(uri: string) {
   const contractAddress = NewsNFT.networks[5778].address
+  console.log("contractAddress: " + contractAddress)
   const contractAbi = NewsNFT.abi
 
   const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
@@ -70,8 +71,22 @@ async function mintNewsNFT(uri: string) {
   const signer = provider.getSigner();
 
   let contract = new ethers.Contract(contractAddress, contractAbi, signer);
-  const transaction = await contract.createNewsItem(uri)
-  return transaction
+  const transaction = await contract.createNewsItem(uri);
+  console.log("transaction: ")
+  console.dir(transaction)
+  const receipt = await transaction.wait();
+  console.log("receipt: ")
+  console.dir(receipt)
+  const tokenId = receipt.events[0].args.tokenId.toString()
+  console.log(transaction.raw)
+  const info = {
+    transactionHash: transaction.hash,
+    gasUsed: receipt.gasUsed.toString(),
+    logs: receipt.logs,
+    status: receipt.status,
+    tokenId: tokenId
+  }
+  return info
 }
 
 
@@ -134,7 +149,7 @@ async function sendToken(to_address: string,
  */
 class WalletConnect extends StreamlitComponentBase<State> {
   public state = {
-    walletAddress: "not",
+    walletAddress: "",
     transaction: "",
     isFocused: false,
     encryptedString: "",
@@ -261,6 +276,10 @@ class WalletConnect extends StreamlitComponentBase<State> {
     } else if (this.props.args["key"] === "mint_news_nft") {
       console.log("Minting NewsNFT with URI: ", this.props.args["uri"])
       const tx: any = await mintNewsNFT(this.props.args["uri"])
+      this.setState(
+        () => ({ transaction: tx }),
+        () => Streamlit.setComponentValue(tx)
+      )
     }
   }
 

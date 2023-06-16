@@ -12,7 +12,7 @@ _wallet_connect = components.declare_component("wallet_connect", url="http://loc
 def wallet_connect(label, key=None, message="Connect Wallet", contract_address="0xCfDdA22C9837aE76E0faA845354f33C62E03653a", amount="0.01", to_address="", message_to_encrypt="", encrypted_string="", encrypted_symmetric_key="", auth_token_contract_address="", chain_name="polygon", contract_type="ERC1155", num_tokens="0", price=10, supply=100, uri="", token_id=0):
     return _wallet_connect(
         label=label,
-        default="not",
+        default=None,
         key=key,
         message=message,
         contract_address=contract_address,
