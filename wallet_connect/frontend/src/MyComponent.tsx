@@ -35,60 +35,17 @@ declare global {
     tokenAddress: any,
   }
 }
-interface Document {
-  authStatus: any,
-}
-
 
 async function getAccount() {
   var provider
   var signer
-  provider = new ethers.providers.Web3Provider(window.ethereum, "any")
-  // Prompt user for account connections
-  const accounts = await window.ethereum.request({
-    method: 'eth_requestAccounts',
-  });
+  provider = new ethers.providers.Web3Provider(window.ethereum)
   await provider.send("eth_requestAccounts", [])
-  window.ethereum.on('accountsChanged', function (accounts: any) {
-    // Time to reload your interface with accounts[0]!
-  });
-  signer = provider.getSigner()
-  signer = "0"
   signer = provider.getSigner()
   const address = await signer.getAddress()
+  console.log("Connected to wallet: " + window.ethereum.isConnected())
   return address
 }
-
-
-async function mintNewsNFT(uri: string) {
-  const contractAddress = NewsNFT.networks[5778].address
-  console.log("contractAddress: " + contractAddress)
-  const contractAbi = NewsNFT.abi
-
-  const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
-
-  await provider.send("eth_requestAccounts", []);
-  const signer = provider.getSigner();
-
-  let contract = new ethers.Contract(contractAddress, contractAbi, signer);
-  const transaction = await contract.createNewsItem(uri);
-  console.log("transaction: ")
-  console.dir(transaction)
-  const receipt = await transaction.wait();
-  console.log("receipt: ")
-  console.dir(receipt)
-  const tokenId = receipt.events[0].args.tokenId.toString()
-  console.log(transaction.raw)
-  const info = {
-    transactionHash: transaction.hash,
-    gasUsed: receipt.gasUsed.toString(),
-    logs: receipt.logs,
-    status: receipt.status,
-    tokenId: tokenId
-  }
-  return info
-}
-
 
 async function sendToken(to_address: string,
   send_token_amount: string,
@@ -275,12 +232,60 @@ class WalletConnect extends StreamlitComponentBase<State> {
       )
     } else if (this.props.args["key"] === "mint_news_nft") {
       console.log("Minting NewsNFT with URI: ", this.props.args["uri"])
-      const tx: any = await mintNewsNFT(this.props.args["uri"])
+      await this.mintNewsNFT(this.props.args["uri"])
+    }
+  }
+
+  private async mintNewsNFT(uri: string) {
+    const contractAddress = NewsNFT.networks[5778].address
+    console.log("contractAddress: " + contractAddress)
+    const contractAbi = NewsNFT.abi
+
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
+    console.log("provider: ")
+    console.dir(provider)
+
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
+    console.log("signer: ")
+    console.dir(signer)
+
+    let contract = new ethers.Contract(contractAddress, contractAbi, signer);
+    console.log("contract: ")
+    console.dir(contract)
+    this.setState(
+      () => ({ transaction: "" }),
+      () => Streamlit.setComponentValue({ status: -1 })
+    )
+    try {
+      const tx = await contract.createNewsItem(uri)
+      console.log("tx: ")
+      console.dir(tx)
+
+      const receipt = await tx.wait()
+      console.log("receipt: ")
+      console.dir(receipt)
+      const tokenId = receipt.events[0].args.tokenId.toString()
+      const info = {
+        transactionHash: tx.hash,
+        gasUsed: receipt.gasUsed.toString(),
+        logs: receipt.logs,
+        status: receipt.status,
+        tokenId: tokenId
+      }
       this.setState(
         () => ({ transaction: tx }),
-        () => Streamlit.setComponentValue(tx)
-      )
+        () => Streamlit.setComponentValue(info)
+      );
     }
+    catch (error) {
+      console.log("error: ")
+      console.dir(error)
+      this.setState(
+        () => ({ transaction: "" }),
+        () => Streamlit.setComponentValue({ status: 0 })
+      )
+    };
   }
 
   /** Focus handler for our "Click Me!" button. */
