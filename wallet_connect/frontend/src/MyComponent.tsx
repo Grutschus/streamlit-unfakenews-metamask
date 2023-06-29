@@ -144,6 +144,9 @@ class WalletConnect extends StreamlitComponentBase<State> {
     }
 
     const message = this.props.args["message"]
+    if (this.props.args["key"] == "instant_check_news_nft") {
+      return null
+    }
     // Show a button and some text.
     // When the button is clicked, we'll increment our "numClicks" state
     // variable, and send its new value back to Streamlit, where it'll
@@ -163,6 +166,15 @@ class WalletConnect extends StreamlitComponentBase<State> {
         </button>
       </span>
     )
+  }
+
+  public async componentDidMount() {
+    if (this.props.args["key"] == "instant_check_news_nft") {
+      console.log("Checking NewsNFT with ID: ", this.props.args["token_id"])
+      await this.checkNewsNFT(this.props.args["token_id"])
+    }
+
+    super.componentDidMount()
   }
 
   /** Click handler for our "Click Me!" button. */
@@ -233,7 +245,40 @@ class WalletConnect extends StreamlitComponentBase<State> {
     } else if (this.props.args["key"] === "mint_news_nft") {
       console.log("Minting NewsNFT with URI: ", this.props.args["uri"])
       await this.mintNewsNFT(this.props.args["uri"])
+    } else if (this.props.args["key"] === "check_news_nft") {
+      console.log("Checking NewsNFT with ID: ", this.props.args["token_id"])
+      await this.checkNewsNFT(this.props.args["token_id"])
     }
+  }
+
+  private async checkNewsNFT(tokenId: Number) {
+    const contractAddress = NewsNFT.networks[5778].address
+    console.log("contractAddress: " + contractAddress)
+    const contractAbi = NewsNFT.abi
+
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any")
+    console.log("provider: ")
+    console.dir(provider)
+
+    let contract = new ethers.Contract(contractAddress, contractAbi, provider);
+    console.log("contract: ")
+    console.dir(contract)
+    try {
+      const status = await contract.getVerificationState(tokenId)
+      const uri = await contract.tokenURI(tokenId)
+      this.setState(
+        () => ({ transaction: "" }),
+        () => Streamlit.setComponentValue({ uri: uri, status: status })
+      )
+    }
+    catch (error) {
+      console.log("error: ")
+      console.dir(error)
+      this.setState(
+        () => ({ transaction: "" }),
+        () => Streamlit.setComponentValue({ status: -1 })
+      )
+    };
   }
 
   private async mintNewsNFT(uri: string) {
@@ -258,6 +303,8 @@ class WalletConnect extends StreamlitComponentBase<State> {
       () => Streamlit.setComponentValue({ status: -1 })
     )
     try {
+      console.log("Creating transaction...")
+      console.log("Token URI: " + uri)
       const tx = await contract.createNewsItem(uri)
       console.log("tx: ")
       console.dir(tx)
